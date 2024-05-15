@@ -6,5 +6,4 @@ Welcome to the COBOL Code Converter API! This API provides two main functionalit
 
 ## 🚀 Features
 
-- **/summarize**: Takes COBOL code as input and returns a summary.
-- **/generate-code**: Takes a summary and returns the corresponding Python code.
+- **/summarize**: Takes COBOL code as input and returns a summary as well as python generated code. 
