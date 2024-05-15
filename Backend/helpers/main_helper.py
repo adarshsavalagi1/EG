@@ -57,7 +57,7 @@ def get_cobol_variables(cobol_code):
     - The first list contains variables without assigned values.
     - The second list contains variables with assigned values.
     """
-    pattern_without_values = r"01\s+([A-Z0-9-]+)(?!.*VALUE.*)"
+    pattern_without_values = r"[0-9]+\s+([A-Z0-9-]+)(?!.*VALUE.*)"
     matches_without_values = re.findall(pattern_without_values, cobol_code)
     pattern_with_values = r"01\s+([A-Z0-9-]+).*VALUE\s+'?([^'.]*)'?.*"
     matches_with_values = re.findall(pattern_with_values, cobol_code)
@@ -101,3 +101,101 @@ def extract_variables_and_types(cobol_tables):
     return variables_and_types
 
 
+
+def convert_to_python_var(cobol_var):
+    return cobol_var.lower().replace('-','_')
+
+def generate_code_for_data_structure(cobol_code):
+    '''
+    This function is used describe each data structure defined in a program
+    '''
+    code = ''' 
+class {}:
+    def __init__(self, {}):
+        {}
+'''
+    pattern = r'\b\d{2}\s+(\S+)\s+PIC\s+([A-Z0-9\(\)]+)\.'
+    matches = re.findall(pattern, cobol_code)
+    record_pattern = r'\b01\s+(\S+)\.'
+    record_match = re.search(record_pattern, cobol_code)
+    record_name = record_match.group(1) if record_match else "unknown record"
+    attributes = []
+    for field_name, _ in matches:
+        attributes.append(f"{convert_to_python_var(field_name)}")
+    return code.format(convert_to_python_var(record_name),",".join(attributes),'\n\t\t'.join([f'self.{i}={i}' for i in attributes]))
+
+
+
+
+def procedure_division_paragraphs(COBOL_CODE):
+    paragraphs = [para.strip() for para in COBOL_CODE.split('\n\n') if para.strip()]
+
+    procedure_division_paragraphs = []
+
+    within_procedure_division = False
+
+    for para in paragraphs:
+        if para.startswith('PROCEDURE DIVISION.'):
+            within_procedure_division = True
+        elif para.startswith('IDENTIFICATION DIVISION.') or para.startswith('ENVIRONMENT DIVISION.') or para.startswith('DATA DIVISION.'):
+            within_procedure_division = False
+
+        if within_procedure_division:
+            procedure_division_paragraphs.append(para)
+            
+    return procedure_division_paragraphs 
+      
+
+
+
+def describe_function(function):
+    description = []
+    function = function.split('\n')
+    for i in function:
+        if i.__contains__('PROCEDURE DIVISION.'):
+            continue
+        elif i.__contains__('PERFORM'):
+            description.append(f'{i.strip()}{i}\n\n\n')
+        elif i.__contains__('DISPLAY'):
+            description.append(f'Print: {i.split("DISPLAY")[1]}\n\n\n')
+        elif i.__contains__('COMPUTE'):
+            description.append(f'{i.split("COMPUTE")[1]}\n\n\n')
+        elif i.__contains__('MOVE'):
+            description.append(f'{i }\n\n\n')
+        elif i.__contains__('ACCEPT'):
+            description.append(f'{i.split("ACCEPT")[1]}\n\n\n')
+        elif i.__contains__('STRING'):
+            description.append(f'{i }\n\n\n')
+        elif i.__contains__('END-PERFORM'):
+            description.append('End of function')
+            break
+        elif i.__contains__('ELSE'):
+            description.append(f'{i}\n\n\n')
+        elif i.__contains__('END-IF'):
+            description.append('End of condition\n\n\n')
+        elif i.__contains__('END'):
+            description.append('End of function\n\n\n')
+            break
+        elif i.__contains__('STOP RUN'):
+            description.append('End of program\n\n\n')
+            break
+        elif i.__contains__('END PROGRAM'):
+            description.append('End of program\n\n\n')
+            break
+        elif i.__contains__('UNTIL'):
+            description.append(f'Until condition: {i}\n\n\n')
+        elif i.__contains__('END UNTIL'):
+            description.append('End of condition\n\n\n')
+        elif i.__contains__('END'):
+            description.append('End of function\n\n\n')
+            break
+        elif i.__contains__('IF'):
+            description.append(f'{i}\n\n\n')
+    return description
+
+def get_procedures(cobol_code):
+    procedures = procedure_division_paragraphs(cobol_code)
+    answer=[]
+    for index,procedure in enumerate(procedures):
+        answer.append( describe_function(procedure))
+    return answer
