@@ -1,5 +1,5 @@
 import re
-
+from icecream import ic
 pic_mapping = {
     'X': 'alphanumeric (string)',
     '9': 'numeric digits',
@@ -59,7 +59,7 @@ def get_cobol_variables(cobol_code):
     """
     pattern_without_values = r"[0-9]+\s+([A-Z0-9-]+)(?!.*VALUE.*)"
     matches_without_values = re.findall(pattern_without_values, cobol_code)
-    pattern_with_values = r"01\s+([A-Z0-9-]+).*VALUE\s+'?([^'.]*)'?.*"
+    pattern_with_values = r"[0-9]+\s+([A-Z0-9-]+).*VALUE\s+'?([^'.]*)'?.*"
     matches_with_values = re.findall(pattern_with_values, cobol_code)
     return matches_without_values, matches_with_values
 
@@ -130,7 +130,7 @@ class {}:
 def procedure_division_paragraphs(COBOL_CODE):
     paragraphs = [para.strip() for para in COBOL_CODE.split('\n\n') if para.strip()]
 
-    procedure_division_paragraphs = []
+    procedure_division_paragraph = []
 
     within_procedure_division = False
 
@@ -141,61 +141,114 @@ def procedure_division_paragraphs(COBOL_CODE):
             within_procedure_division = False
 
         if within_procedure_division:
-            procedure_division_paragraphs.append(para)
-            
-    return procedure_division_paragraphs 
+            procedure_division_paragraph.append(para)
+        ic(procedure_division_paragraph)
+        if procedure_division_paragraph==[]:
+            pattern = r"PROCEDURE\s+DIVISION\s*\.\s*((?:(?!PROCEDURE\s+DIVISION\s*\.)[^\n]|\n)*)"
+            match = re.search(pattern, COBOL_CODE, re.MULTILINE | re.DOTALL)
+
+            if match:
+                   procedure_division_paragraph.append( match.group(1).split('\n'))
+
+    return procedure_division_paragraph
       
 
 
 
 def describe_function(function):
     description = []
-    function = function.split('\n')
-    for i in function:
-        if i.__contains__('PROCEDURE DIVISION.'):
-            continue
-        elif i.__contains__('PERFORM'):
-            description.append(f'{i.strip()}{i}\n\n\n')
-        elif i.__contains__('DISPLAY'):
-            description.append(f'Print: {i.split("DISPLAY")[1]}\n\n\n')
-        elif i.__contains__('COMPUTE'):
-            description.append(f'{i.split("COMPUTE")[1]}\n\n\n')
-        elif i.__contains__('MOVE'):
-            description.append(f'{i }\n\n\n')
-        elif i.__contains__('ACCEPT'):
-            description.append(f'{i.split("ACCEPT")[1]}\n\n\n')
-        elif i.__contains__('STRING'):
-            description.append(f'{i }\n\n\n')
-        elif i.__contains__('END-PERFORM'):
-            description.append('End of function')
-            break
-        elif i.__contains__('ELSE'):
-            description.append(f'{i}\n\n\n')
-        elif i.__contains__('END-IF'):
-            description.append('End of condition\n\n\n')
-        elif i.__contains__('END'):
-            description.append('End of function\n\n\n')
-            break
-        elif i.__contains__('STOP RUN'):
-            description.append('End of program\n\n\n')
-            break
-        elif i.__contains__('END PROGRAM'):
-            description.append('End of program\n\n\n')
-            break
-        elif i.__contains__('UNTIL'):
-            description.append(f'Until condition: {i}\n\n\n')
-        elif i.__contains__('END UNTIL'):
-            description.append('End of condition\n\n\n')
-        elif i.__contains__('END'):
-            description.append('End of function\n\n\n')
-            break
-        elif i.__contains__('IF'):
-            description.append(f'{i}\n\n\n')
-    return description
+    ic(function)
+    try:
+        function = function.split('\n')
+        for i in function:
+            if i.__contains__('PROCEDURE DIVISION.'):
+                continue
+            elif i.__contains__('PERFORM'):
+                description.append(f'{i.strip()}{i}\n\n\n')
+            elif i.__contains__('DISPLAY'):
+                description.append(f'Print: {i.split("DISPLAY")[1]}\n\n\n')
+            elif i.__contains__('COMPUTE'):
+                description.append(f'{i.split("COMPUTE")[1]}\n\n\n')
+            elif i.__contains__('MOVE'):
+                description.append(f'{i }\n\n\n')
+            elif i.__contains__('ACCEPT'):
+                description.append(f'{i.split("ACCEPT")[1]}\n\n\n')
+            elif i.__contains__('STRING'):
+                description.append(f'{i }\n\n\n')
+            elif i.__contains__('END-PERFORM'):
+                description.append('End of function')
+                break
+            elif i.__contains__('ELSE'):
+                description.append(f'{i}\n\n\n')
+            elif i.__contains__('END-IF'):
+                description.append('End of condition\n\n\n')
+            elif i.__contains__('END'):
+                description.append('End of function\n\n\n')
+                break
+            elif i.__contains__('STOP RUN'):
+                description.append('End of program\n\n\n')
+                break
+            elif i.__contains__('END PROGRAM'):
+                description.append('End of program\n\n\n')
+                break
+            elif i.__contains__('UNTIL'):
+                description.append(f'Until condition: {i}\n\n\n')
+            elif i.__contains__('END UNTIL'):
+                description.append('End of condition\n\n\n')
+            elif i.__contains__('END'):
+                description.append('End of function\n\n\n')
+                break
+            elif i.__contains__('IF'):
+                description.append(f'{i}\n\n\n')
+        return description
+    except Exception as e:
+        for i in function:
+            if i.__contains__('PROCEDURE DIVISION.'):
+                continue
+            elif i.__contains__('PERFORM'):
+                description.append(f'{i.strip()}{i}\n\n\n')
+            elif i.__contains__('DISPLAY'):
+                description.append(f'Print: {i.split("DISPLAY")[1]}\n\n\n')
+            elif i.__contains__('COMPUTE'):
+                description.append(f'{i.split("COMPUTE")[1]}\n\n\n')
+            elif i.__contains__('MOVE'):
+                description.append(f'{i }\n\n\n')
+            elif i.__contains__('ACCEPT'):
+                description.append(f'Take input {i.split("ACCEPT")[1]}\n\n\n')
+            elif i.__contains__('STRING'):
+                description.append(f'{i }\n\n\n')
+            elif i.__contains__('END-PERFORM'):
+                description.append('End of function')
+                break
+            elif i.__contains__('ELSE'):
+                description.append(f'{i}\n\n\n')
+            elif i.__contains__('END-IF'):
+                description.append('End of condition\n\n\n')
+            elif i.__contains__('END'):
+                description.append('End of function\n\n\n')
+                break
+            elif i.__contains__('STOP RUN'):
+                description.append('End of program\n\n\n')
+                break
+            elif i.__contains__('END PROGRAM'):
+                description.append('End of program\n\n\n')
+                break
+            elif i.__contains__('UNTIL'):
+                description.append(f'Until condition: {i}\n\n\n')
+            elif i.__contains__('END UNTIL'):
+                description.append('End of condition\n\n\n')
+            elif i.__contains__('END'):
+                description.append('End of function\n\n\n')
+                break
+            elif i.__contains__('IF'):
+                description.append(f'{i}\n\n\n')
+        return description
+
 
 def get_procedures(cobol_code):
     procedures = procedure_division_paragraphs(cobol_code)
     answer=[]
-    for index,procedure in enumerate(procedures):
+    for procedure in procedures:
         answer.append( describe_function(procedure))
+        ic(procedure)
     return answer

@@ -15,9 +15,11 @@ def summarize(code):
     for i in variables[1]:
         answer+=f"{convert_to_python_var(i[0])}='{i[1]}'"+'\n'
     functions = get_procedures(code)
-    print(functions)
-
-    return {"data_structure":data_structure,'variables_without_data': variables[0],"variables_with_data": variables[1],"data_tables" :data_tables,"code":answer,'functions':functions}
+    list1 = ['IF','ACCEPT','ACCEPT','BY','END-IF','UNTIL','COMPUTE']
+    return {"data_structure":data_structure,
+            'variables_without_data': [element for element in variables[0] if element not in list1],
+            "variables_with_data": variables[1],
+            "data_tables" :data_tables,"code":answer,'functions':functions}
 
 
 def generate_code(summary):
